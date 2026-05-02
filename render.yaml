@@ -1,0 +1,50 @@
+# Render Blueprint — Infrastructure as Code
+# Documentation : https://render.com/docs/blueprint-spec
+#
+# Pour déployer : connecter le repo GitHub à Render puis "New Blueprint Instance".
+# Render lit ce fichier et provisionne automatiquement le service web + la BDD.
+
+services:
+  # API Node.js / Express
+  - type: web
+    name: lotofolio-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 3000
+
+      # JWT_SECRET généré automatiquement par Render (chaîne aléatoire sécurisée)
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+      # Connexion injectée automatiquement depuis la BDD ci-dessous
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lotofolio-db
+          property: connectionString
+
+      # À renseigner manuellement dans le dashboard Render (URL du frontend déployé)
+      - key: FRONTEND_URL
+        sync: false
+
+# Base de données PostgreSQL managée
+databases:
+  - name: lotofolio-db
+    plan: free
+    databaseName: loto_api
+    user: loto_admin
+    region: frankfurt
+    postgresMajorVersion: "16"

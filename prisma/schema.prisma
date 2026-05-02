@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  username  String
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parties Partie[]
+
+  @@map("users")
+}
+
+model Jeu {
+  id                   Int      @id @default(autoincrement())
+  nom                  String
+  description          String?
+  regle                String?
+  nbNumerosATirer      Int      @map("nb_numeros")
+  intervalNumero       Int      @map("interval_numeros")
+  nbNumeroChanceATirer Int      @map("nb_numero_chance_a_tirer")
+  intervalNumeroChance Int      @map("interval_numero_chance")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  tirages Tirage[]
+
+  @@map("jeux")
+}
+
+model Grille {
+  id           Int      @id @default(autoincrement())
+  jeuId        Int      @map("jeu_id")
+  numeros      Int[]    @map("numeros")
+  numeroChance Int[]    @map("numero_chance")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  parties Partie[]
+
+  @@map("grilles")
+}
+
+model Tirage {
+  id               Int      @id @default(autoincrement())
+  jeuId            Int      @map("jeu_id")
+  dateTirage       DateTime @map("date_tirage")
+  numerosTires     Int[]    @default([]) @map("numeros_tires")
+  numeroChanceTire Int[]    @default([]) @map("numero_chance_tire")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  jeu     Jeu      @relation(fields: [jeuId], references: [id])
+  parties Partie[]
+
+  @@map("tirages")
+}
+
+model Partie {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  grilleId  Int      @map("grille_id")
+  tirageId  Int      @map("tirage_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  grille   Grille    @relation(fields: [grilleId], references: [id])
+  tirage   Tirage    @relation(fields: [tirageId], references: [id])
+  resultat Resultat?
+
+  @@map("parties")
+}
+
+model Resultat {
+  id            Int      @id @default(autoincrement())
+  partieId      Int      @unique @map("partie_id")
+  nbBonsNumeros Int      @map("nb_bons_numeros")
+  nbBonsChance  Int      @map("nb_bons_chance")
+  rang          Int?
+  gain          Int   
+  isGagnant     Boolean  @default(false) @map("is_gagnant")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  partie Partie @relation(fields: [partieId], references: [id])
+
+  @@map("resultats")
+}
+
+enum Role {
+  USER
+  ADMIN
+}

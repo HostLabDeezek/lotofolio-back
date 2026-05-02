@@ -1,0 +1,87 @@
+import { env } from './config/env.js';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { prisma } from './lib/prisma.js';
+import authRoutes from './routes/auth.routes.js';
+import jeuRoutes from './routes/jeu.route.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import logger from './lib/logger.js';
+
+const app = express();
+
+const allowedOrigins = env.FRONTEND_URL.split(',').map(s => s.trim());
+
+// ✅ 1. Security headers
+app.use(helmet());
+
+// ✅ 2. CORS
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// ✅ 3. JSON Parser
+app.use(express.json());
+
+// ✅ 4. HTTP request logging (AVANT les routes !)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.on('finish', () => {
+    logger.info(`${req.method} ${req.url} ${res.statusCode}`);
+  });
+  next();
+});
+
+// ✅ 5. Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/jeux', jeuRoutes);
+
+// ✅ 6. Routes de test
+app.get('/', (req: Request, res: Response) => {
+  res.json({ message: '✅ API Loto is running' });
+});
+
+// Liveness probe : le process répond. Pas d'appel BDD pour éviter de
+// faire restart le service quand la BDD a juste un hoquet.
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'OK' });
+});
+
+// Readiness probe : l'instance peut servir du trafic (BDD joignable).
+app.get('/ready', async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'OK', database: 'Connected' });
+  } catch (error) {
+    logger.error('Readiness check failed', { error });
+    res.status(503).json({ status: 'ERROR', database: 'Disconnected' });
+  }
+});
+
+// ✅ 7. Error handler
+app.use(errorHandler);
+
+// ✅ 8. 404
+app.use((req: Request, res: Response) => {
+  logger.warn(`404 - ${req.method} ${req.url}`);
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.listen(env.PORT, async () => {
+  logger.info(`Server listening on port ${env.PORT}`);
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    logger.info('Database connected');
+  } catch (error) {
+    logger.error('Failed to connect to database', { error });
+  }
+});
