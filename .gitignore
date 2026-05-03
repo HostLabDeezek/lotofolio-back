@@ -8,6 +8,7 @@ dist/
 
 # Generated code (Prisma client)
 generated/
+src/generated/
 
 # Environment variables (secrets !)
 .env
