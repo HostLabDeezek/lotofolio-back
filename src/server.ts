@@ -75,7 +75,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(env.PORT, async () => {
+const server = app.listen(env.PORT, async () => {
   logger.info(`Server listening on port ${env.PORT}`);
 
   try {
@@ -85,3 +85,18 @@ app.listen(env.PORT, async () => {
     logger.error('Failed to connect to database', { error });
   }
 });
+
+const shutdown = (signal: string) => {
+  logger.info(`Received ${signal}, shutting down gracefully`);
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error('Forced shutdown after 10s timeout');
+    process.exit(1);
+  }, 10000).unref();
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

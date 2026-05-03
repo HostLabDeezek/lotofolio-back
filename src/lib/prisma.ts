@@ -7,12 +7,4 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const disconnect = async () => {
-  await prisma.$disconnect();
-};
-
-process.on('beforeExit', disconnect);
-process.on('SIGINT', disconnect);
-process.on('SIGTERM', disconnect);
-
 export { prisma }
