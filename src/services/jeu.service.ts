@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { Jeu } from "../../generated/prisma/client.js";
+import { Jeu } from "../generated/prisma/client.js";
 
 export class JeuService {
 
