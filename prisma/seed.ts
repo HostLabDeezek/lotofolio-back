@@ -45,11 +45,24 @@ async function main() {
     })
     console.log('Created game:', jeu)
 
+    const jeu2 = await prisma.jeu.create({
+        data: {
+            nom: 'Loto Flash',
+            description: 'Jeu express : 2 numéros parmi 20',
+            regle: 'Choisissez 2 numéros entre 1 et 20, et un numéro chance entre 1 et 5.',
+            intervalNumero: 20,
+            nbNumerosATirer: 2,
+            intervalNumeroChance: 5,
+            nbNumeroChanceATirer: 1,
+        },
+    })
+    console.log('Created game:', jeu2)
+
     const tirage = await prisma.tirage.create({
         data: {
             dateTirage: new Date('2026-02-05T20:00:00Z'),
             jeu: {
-                connect: { id: 1 },
+                connect: { id: jeu.id },
             },
         },
     })

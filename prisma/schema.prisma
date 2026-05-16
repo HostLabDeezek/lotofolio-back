@@ -65,6 +65,7 @@ model Tirage {
   jeu     Jeu      @relation(fields: [jeuId], references: [id])
   parties Partie[]
 
+  @@unique([jeuId, dateTirage])
   @@map("tirages")
 }
 
@@ -89,7 +90,7 @@ model Resultat {
   nbBonsNumeros Int      @map("nb_bons_numeros")
   nbBonsChance  Int      @map("nb_bons_chance")
   rang          Int?
-  gain          Int   
+  gain          Int
   isGagnant     Boolean  @default(false) @map("is_gagnant")
   createdAt     DateTime @default(now()) @map("created_at")
 
