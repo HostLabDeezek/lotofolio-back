@@ -55,17 +55,19 @@ model Grille {
 }
 
 model Tirage {
-  id               Int      @id @default(autoincrement())
-  jeuId            Int      @map("jeu_id")
-  dateTirage       DateTime @map("date_tirage")
-  numerosTires     Int[]    @default([]) @map("numeros_tires")
-  numeroChanceTire Int[]    @default([]) @map("numero_chance_tire")
-  createdAt        DateTime @default(now()) @map("created_at")
+  id               Int          @id @default(autoincrement())
+  jeuId            Int          @map("jeu_id")
+  dateTirage       DateTime     @map("date_tirage")
+  numerosTires     Int[]        @default([]) @map("numeros_tires")
+  numeroChanceTire Int[]        @default([]) @map("numero_chance_tire")
+  status           TirageStatus @default(PENDING)
+  createdAt        DateTime     @default(now()) @map("created_at")
 
   jeu     Jeu      @relation(fields: [jeuId], references: [id])
   parties Partie[]
 
   @@unique([jeuId, dateTirage])
+  @@index([status, dateTirage])
   @@map("tirages")
 }
 
@@ -102,4 +104,11 @@ model Resultat {
 enum Role {
   USER
   ADMIN
+}
+
+enum TirageStatus {
+  PENDING
+  DRAWING
+  DONE
+  EXPIRED
 }
