@@ -8,6 +8,7 @@ import jeuRoutes from './routes/jeu.route.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import logger from './lib/logger.js';
 import internalRoutes from './routes/internal.routes.js';
+import tirageService from './services/tirage.service.js';
 
 const app = express();
 
@@ -86,6 +87,9 @@ const server = app.listen(env.PORT, async () => {
   } catch (error) {
     logger.error('Failed to connect to database', { error });
   }
+  tirageService.performPendingDraws()
+    .then(report => logger.info('Catch-up: terminé', report))
+    .catch(err => logger.error('Catch-up: erreur', { error: err }));
 });
 
 const shutdown = (signal: string) => {
