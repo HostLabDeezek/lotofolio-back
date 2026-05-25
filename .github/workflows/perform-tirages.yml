@@ -14,7 +14,7 @@ jobs:
         run: |
           curl -fSs --max-time 90 \
             -X POST \
-            -H "X-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
+            -H "X-Internal-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
             "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/perform-today"
 
       - name: Create tomorrow's tirage
@@ -22,5 +22,5 @@ jobs:
         run: |
           curl -fSs --max-time 90 \
             -X POST \
-            -H "X-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
+            -H "X-Internal-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
             "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/create-tomorrow"
