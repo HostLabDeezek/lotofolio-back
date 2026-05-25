@@ -12,6 +12,10 @@ import tirageService from './services/tirage.service.js';
 
 const app = express();
 
+// Required for Render (and any reverse proxy): trust the first proxy so that
+// express-rate-limit can read X-Forwarded-For without throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
+
 const allowedOrigins = env.FRONTEND_URL.split(',').map(s => s.trim());
 
 // ✅ 1. Security headers
