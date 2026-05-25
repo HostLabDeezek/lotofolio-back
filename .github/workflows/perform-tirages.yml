@@ -1,0 +1,26 @@
+name: Perform today's draw and create tomorrow's
+
+on:
+  schedule:
+    - cron: "55 18 * * *" # 19h55 CET (hiver, UTC+1)
+    - cron: "55 17 * * *" # 19h55 CEST (été, UTC+2)
+  workflow_dispatch:
+
+jobs:
+  perform-and-prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Perform today's draw
+        run: |
+          curl -fSs --max-time 90 \
+            -X POST \
+            -H "X-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
+            "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/perform-today"
+
+      - name: Create tomorrow's tirage
+        if: always()
+        run: |
+          curl -fSs --max-time 90 \
+            -X POST \
+            -H "X-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
+            "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/create-tomorrow"
