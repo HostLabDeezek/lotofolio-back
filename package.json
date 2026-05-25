@@ -7,7 +7,11 @@
     "build": "tsc",
     "start": "prisma migrate deploy && node ./dist/src/server.js",
     "dev": "tsx watch src/server.ts",
+    "seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "type": "module",
   "keywords": [],
