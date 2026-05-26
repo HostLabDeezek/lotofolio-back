@@ -44,12 +44,12 @@ model Jeu {
 
 model Grille {
   id           Int      @id @default(autoincrement())
-  jeuId        Int      @map("jeu_id")
+  partieId     Int      @map("partie_id")
   numeros      Int[]    @map("numeros")
   numeroChance Int[]    @map("numero_chance")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  parties Partie[]
+  partie Partie @relation(fields: [partieId], references: [id], onDelete: Cascade)
 
   @@map("grilles")
 }
@@ -74,15 +74,15 @@ model Tirage {
 model Partie {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
-  grilleId  Int      @map("grille_id")
   tirageId  Int      @map("tirage_id")
   createdAt DateTime @default(now()) @map("created_at")
 
   user     User      @relation(fields: [userId], references: [id])
-  grille   Grille    @relation(fields: [grilleId], references: [id])
   tirage   Tirage    @relation(fields: [tirageId], references: [id])
+  grilles  Grille[]
   resultat Resultat?
 
+  @@unique([userId, tirageId])
   @@map("parties")
 }
 
