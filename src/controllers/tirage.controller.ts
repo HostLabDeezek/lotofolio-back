@@ -25,6 +25,20 @@ class TirageController {
             next(error);
         }
     }
+
+    async getCurrentTirageByJeuId(req: Request, res: Response, next: NextFunction) {
+        try {
+            const jeuId = parseInt(req.params.id);
+            const tirage = await tirageService.getCurrentTirageByJeuId(jeuId);
+            if (!tirage) {
+                res.status(404).json({ code: 'NO_CURRENT_TIRAGE' });
+                return;
+            }
+            res.json(tirage);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new TirageController();
