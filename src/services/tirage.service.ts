@@ -158,7 +158,7 @@ export class TirageService {
         }
 
         const cutoffDate = new Date(Date.now() + CUTOFF_MARGIN_MINUTES * 60 * 1000)
-        const tirage = await prisma.tirage.findFirst({ where: { jeuId, numerosTires: { isEmpty: true }, dateTirage: { gt: cutoffDate } }, orderBy: { dateTirage: 'asc' } });
+        const tirage = await prisma.tirage.findFirst({ where: { jeuId, status: TirageStatus.PENDING, dateTirage: { gt: cutoffDate } }, orderBy: { dateTirage: 'asc' } });
         return tirage;
 
 
