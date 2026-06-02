@@ -8,7 +8,10 @@
     "start": "prisma migrate deploy && node ./dist/src/server.js",
     "dev": "tsx watch src/server.ts",
     "seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "generate": "plop",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -26,10 +29,14 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.6",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
+    "plop": "^4.0.5",
     "prisma": "^7.2.0",
+    "supertest": "^7.2.2",
     "tsc-watch": "^7.2.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
