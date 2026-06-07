@@ -3,8 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { Tirage, TirageStatus } from '../generated/prisma/client.js';
 import logger from '../lib/logger.js';
 import { AppError } from '../errors/AppError.js';
-
-const CUTOFF_MARGIN_MINUTES = 6;
+import { getCutoffDate } from '../utils/cutoff.js';
 
 export class TirageService {
 
@@ -157,7 +156,7 @@ export class TirageService {
             throw new AppError('JEU_NOT_FOUND', 404, `Jeu avec id ${jeuId} non trouvé`);
         }
 
-        const cutoffDate = new Date(Date.now() + CUTOFF_MARGIN_MINUTES * 60 * 1000)
+        const cutoffDate = getCutoffDate();
         const tirage = await prisma.tirage.findFirst({ where: { jeuId, status: TirageStatus.PENDING, dateTirage: { gt: cutoffDate } }, orderBy: { dateTirage: 'asc' } });
         return tirage;
 

@@ -113,7 +113,7 @@ describe('TirageService.getCurrentTirageByJeuId', () => {
     await expect(service.getCurrentTirageByJeuId(999)).rejects.toBeInstanceOf(AppError);
   });
 
-  it('ignore les tirages déjà effectués (numerosTires non vide)', async () => {
+  it('ignore les tirages déjà effectués (status non PENDING)', async () => {
     vi.mocked(prisma.jeu.findUnique).mockResolvedValue(makeJeu() as any);
     vi.mocked(prisma.tirage.findFirst).mockResolvedValue(null);
 
@@ -122,7 +122,7 @@ describe('TirageService.getCurrentTirageByJeuId', () => {
     expect(prisma.tirage.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          numerosTires: { isEmpty: true },
+          status: TirageStatus.PENDING,
         }),
       }),
     );
