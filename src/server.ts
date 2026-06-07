@@ -4,11 +4,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { prisma } from './lib/prisma.js';
 import authRoutes from './routes/auth.routes.js';
-import jeuRoutes from './routes/jeu.route.js';
+import jeuRoutes from './routes/jeu.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import logger from './lib/logger.js';
 import internalRoutes from './routes/internal.routes.js';
+import tirageRoutes from './routes/tirage.routes.js';
 import tirageService from './services/tirage.service.js';
+import partieRoutes from './routes/partie.routes.js';
 
 const app = express();
 
@@ -49,6 +51,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // ✅ 5. Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jeux', jeuRoutes);
+app.use('/api/jeux', tirageRoutes);
+app.use('/api/parties', partieRoutes); // routes d'admin et de debug, protégées par authMiddleware
 app.use('/internal', internalRoutes);
 
 // ✅ 6. Routes de test

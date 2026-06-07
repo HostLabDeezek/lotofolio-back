@@ -1,0 +1,10 @@
+import { prisma } from '../lib/prisma.js';
+
+export class {{pascalCase name}}Service {
+
+    async getAll() {
+        return await prisma.{{camelCase name}}.findMany();
+    }
+}
+
+export default new {{pascalCase name}}Service();
