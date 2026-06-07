@@ -2,17 +2,33 @@ name: Perform today's draw and create tomorrow's
 
 on:
   schedule:
-    - cron: "55 18 * * *" # 19h55 CET (hiver, UTC+1)
-    - cron: "55 17 * * *" # 19h55 CEST (été, UTC+2)
+    # Le tirage est planifié à 20h00 heure de Paris. On déclenche le cron à 20h05
+    # (après l'heure du tirage) pour qu'il soit bien "dû" et performé le jour même.
+    # GitHub ne sachant pas gérer l'heure d'été/hiver, on programme les deux horaires :
+    # l'un est correct en hiver, l'autre en été. Les runs en trop sont sans effet
+    # (le claim atomique est idempotent).
+    - cron: "5 19 * * *" # 20h05 CET (hiver, UTC+1)
+    - cron: "5 18 * * *" # 20h05 CEST (été, UTC+2)
   workflow_dispatch:
 
 jobs:
   perform-and-prepare:
     runs-on: ubuntu-latest
     steps:
+      # Le service Render (plan gratuit) s'endort après ~15 min d'inactivité.
+      # On le réveille d'abord via /health (qui ne touche pas la BDD et répond
+      # dès que le process est up), avec plusieurs tentatives, pour absorber le
+      # temps de cold start AVANT de lancer les vraies requêtes.
+      - name: Wake service (cold start)
+        run: |
+          curl -fsS --max-time 120 \
+            --retry 10 --retry-delay 15 --retry-connrefused --retry-all-errors \
+            "${{ secrets.RENDER_BACKEND_URL }}/health"
+
       - name: Perform today's draw
         run: |
-          curl -fSs --max-time 90 \
+          curl -fsS --max-time 120 \
+            --retry 3 --retry-delay 10 --retry-all-errors \
             -X POST \
             -H "X-Internal-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
             "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/perform-today"
@@ -20,7 +36,8 @@ jobs:
       - name: Create tomorrow's tirage
         if: always()
         run: |
-          curl -fSs --max-time 90 \
+          curl -fsS --max-time 120 \
+            --retry 3 --retry-delay 10 --retry-all-errors \
             -X POST \
             -H "X-Internal-Cron-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
             "${{ secrets.RENDER_BACKEND_URL }}/internal/tirages/create-tomorrow"
