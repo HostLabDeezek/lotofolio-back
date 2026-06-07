@@ -8,6 +8,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   PORT: z.coerce.number().default(3000),
   FRONTEND_URL: z.string(),
+  CUTOFF_MARGIN_MINUTES: z.coerce.number().int().positive().default(6),
 });
 
 const result = envSchema.safeParse(process.env);
