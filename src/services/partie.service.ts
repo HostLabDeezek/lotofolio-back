@@ -3,6 +3,10 @@ import { AppError } from '../errors/AppError.js';
 import { getCutoffDate } from '../utils/cutoff.js';
 import { TirageStatus } from '../generated/prisma/client.js';
 import type { Jeu } from '../generated/prisma/client.js';
+import { Role } from '../../generated/prisma/enums.js';
+
+/** Maximum number of grilles a regular USER may have on a single tirage. */
+const MAX_GRILLES_PER_TIRAGE_USER = 10;
 
 type GrilleInput = {
   numeros: number[];
@@ -15,6 +19,8 @@ export type PartieHistoriqueItem = {
   /** Date du tirage (ISO 8601) — correspond à `Tirage.dateTirage`. */
   dateTirage: string;
   jeu: { id: number; nom: string };
+  /** Status du tirage — permet au frontend de séparer "en cours" et "réalisés". */
+  status: TirageStatus;
 };
 
 export type PartieDetailResponse = {
@@ -22,6 +28,8 @@ export type PartieDetailResponse = {
   tirage: {
     id: number;
     dateTirage: string;
+    /** Status du tirage — détermine l'affichage du détail (en cours vs réalisé). */
+    status: TirageStatus;
     numerosTires: number[];
     numeroChanceTire: number[];
     jeu: { id: number; nom: string };
@@ -31,7 +39,7 @@ export type PartieDetailResponse = {
 
 export class PartieService {
 
-  async jouer(userId: number, tirageId: number, grilles: GrilleInput[]): Promise<void> {
+  async jouer(userId: number, tirageId: number, grilles: GrilleInput[], userRole: Role): Promise<void> {
 
     const tirage = await prisma.tirage.findUnique({
       where: { id: tirageId },
@@ -47,6 +55,21 @@ export class PartieService {
     }
 
     this.validateGrilles(grilles, tirage.jeu);
+
+    if (userRole !== Role.ADMIN) {
+      const existing = await prisma.partie.findUnique({
+        where: { userId_tirageId: { userId, tirageId } },
+        include: { grilles: { select: { id: true } } },
+      });
+      const existingCount = existing?.grilles.length ?? 0;
+      if (existingCount + grilles.length > MAX_GRILLES_PER_TIRAGE_USER) {
+        throw new AppError(
+          'GRILLE_LIMIT_REACHED',
+          409,
+          `Maximum ${MAX_GRILLES_PER_TIRAGE_USER} grilles par tirage autorisées (vous en avez déjà ${existingCount})`,
+        );
+      }
+    }
 
     await prisma.partie.upsert({
       where: { userId_tirageId: { userId, tirageId } },
@@ -91,6 +114,7 @@ export class PartieService {
       tirageId: p.tirageId,
       dateTirage: p.tirage.dateTirage.toISOString(),
       jeu: { id: p.tirage.jeu.id, nom: p.tirage.jeu.nom },
+      status: p.tirage.status,
     }));
   }
 
@@ -116,6 +140,7 @@ export class PartieService {
       tirage: {
         id: partie.tirage.id,
         dateTirage: partie.tirage.dateTirage.toISOString(),
+        status: partie.tirage.status,
         numerosTires: partie.tirage.numerosTires,
         numeroChanceTire: partie.tirage.numeroChanceTire,
         jeu: { id: partie.tirage.jeu.id, nom: partie.tirage.jeu.nom },

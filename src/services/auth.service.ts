@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { env } from '../config/env.js';
+import { Role } from '../../generated/prisma/enums.js';
 
 export class AuthService {
 
@@ -18,7 +19,7 @@ export class AuthService {
     });
 
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role as Role },
       env.JWT_SECRET,
       { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
     );
@@ -38,7 +39,7 @@ export class AuthService {
     }
 
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role as Role },
       env.JWT_SECRET,
       { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
     );

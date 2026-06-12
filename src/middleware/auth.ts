@@ -1,17 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { Role } from '../../generated/prisma/enums.js';
 
 declare global {
   namespace Express {
     interface Request {
       userId?: number;
+      userRole?: Role;
     }
   }
 }
 
 interface JwtPayload {
   userId: number;
+  role: Role;
 }
 
 export const authMiddleware = async (
@@ -32,6 +35,7 @@ export const authMiddleware = async (
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
     req.userId = decoded.userId;
+    req.userRole = decoded.role;
 
     next();
   } catch (error) {

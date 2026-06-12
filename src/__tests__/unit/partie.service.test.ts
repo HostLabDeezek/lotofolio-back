@@ -7,6 +7,7 @@ vi.mock('../../lib/prisma.js', () => ({
       upsert: vi.fn(),
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -16,6 +17,7 @@ import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../errors/AppError.js';
 import type { Jeu, Tirage } from '../../generated/prisma/client.js';
 import { TirageStatus } from '../../generated/prisma/client.js';
+import { Role } from '../../generated/prisma/enums.js';
 
 const FIXED_NOW = new Date('2024-06-15T18:00:00.000Z').getTime();
 
@@ -59,6 +61,8 @@ describe('PartieService.jouer', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(FIXED_NOW);
+    // No existing grilles by default — grille limit check passes.
+    vi.mocked(prisma.partie.findUnique).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -68,10 +72,10 @@ describe('PartieService.jouer', () => {
   it("lance TIRAGE_NOT_FOUND si le tirage n'existe pas", async () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(null);
 
-    await expect(service.jouer(1, 999, [validGrille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 999, [validGrille], Role.USER)).rejects.toMatchObject({
       code: 'TIRAGE_NOT_FOUND',
     });
-    await expect(service.jouer(1, 999, [validGrille])).rejects.toBeInstanceOf(AppError);
+    await expect(service.jouer(1, 999, [validGrille], Role.USER)).rejects.toBeInstanceOf(AppError);
   });
 
   it('lance CUTOFF_PASSED (409) si le tirage est trop proche (sous la marge)', async () => {
@@ -80,7 +84,7 @@ describe('PartieService.jouer', () => {
     });
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(tirage);
 
-    await expect(service.jouer(1, 1, [validGrille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [validGrille], Role.USER)).rejects.toMatchObject({
       code: 'CUTOFF_PASSED',
       statusCode: 409,
     });
@@ -93,7 +97,7 @@ describe('PartieService.jouer', () => {
     });
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(tirage);
 
-    await expect(service.jouer(1, 1, [validGrille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [validGrille], Role.USER)).rejects.toMatchObject({
       code: 'CUTOFF_PASSED',
       statusCode: 409,
     });
@@ -106,7 +110,7 @@ describe('PartieService.jouer', () => {
     });
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(tirage);
 
-    await service.jouer(1, 1, [validGrille]);
+    await service.jouer(1, 1, [validGrille], Role.USER);
 
     expect(prisma.partie.upsert).toHaveBeenCalledWith({
       where: { userId_tirageId: { userId: 1, tirageId: 1 } },
@@ -125,7 +129,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 5, 12], numeroChance: [2, 7] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -135,7 +139,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 5, 12, 23, 34], numeroChance: [2] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -145,7 +149,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 5, 12, 23, 99], numeroChance: [2, 7] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -155,7 +159,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 5, 12, 23, 34], numeroChance: [2, 99] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -165,7 +169,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 1, 12, 23, 34], numeroChance: [2, 7] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -175,7 +179,7 @@ describe('PartieService.jouer', () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
     const grille = { numeros: [1, 5, 12, 23, 34], numeroChance: [7, 7] };
 
-    await expect(service.jouer(1, 1, [grille])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [grille], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -184,7 +188,7 @@ describe('PartieService.jouer', () => {
   it('rejette INVALID_GRILLE si deux grilles sont identiques', async () => {
     vi.mocked(prisma.tirage.findUnique).mockResolvedValue(makeTirage());
 
-    await expect(service.jouer(1, 1, [validGrille, { ...validGrille }])).rejects.toMatchObject({
+    await expect(service.jouer(1, 1, [validGrille, { ...validGrille }], Role.USER)).rejects.toMatchObject({
       code: 'INVALID_GRILLE',
       statusCode: 400,
     });
@@ -231,6 +235,7 @@ describe('PartieService.getHistory', () => {
       tirageId: 10,
       dateTirage: '2026-05-31T18:30:00.000Z',
       jeu: { id: 2, nom: 'Loto' },
+      status: TirageStatus.DONE,
     });
   });
 
@@ -287,6 +292,7 @@ describe('PartieService.getPartieDetail', () => {
       tirage: {
         id: 10,
         dateTirage: '2026-05-31T18:30:00.000Z',
+        status: TirageStatus.DONE,
         numerosTires: [7, 14, 23, 31, 42],
         numeroChanceTire: [3],
         jeu: { id: 2, nom: 'Loto' },
