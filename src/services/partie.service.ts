@@ -3,7 +3,7 @@ import { AppError } from '../errors/AppError.js';
 import { getCutoffDate } from '../utils/cutoff.js';
 import { TirageStatus } from '../generated/prisma/client.js';
 import type { Jeu } from '../generated/prisma/client.js';
-import { Role } from '../../generated/prisma/enums.js';
+import { Role } from '../generated/prisma/enums.js';
 
 /** Maximum number of grilles a regular USER may have on a single tirage. */
 const MAX_GRILLES_PER_TIRAGE_USER = 10;
