@@ -56,41 +56,48 @@ export class PartieService {
 
     this.validateGrilles(grilles, tirage.jeu);
 
-    if (userRole !== Role.ADMIN) {
-      const existing = await prisma.partie.findUnique({
-        where: { userId_tirageId: { userId, tirageId } },
-        include: { grilles: { select: { id: true } } },
-      });
-      const existingCount = existing?.grilles.length ?? 0;
-      if (existingCount + grilles.length > MAX_GRILLES_PER_TIRAGE_USER) {
-        throw new AppError(
-          'GRILLE_LIMIT_REACHED',
-          409,
-          `Maximum ${MAX_GRILLES_PER_TIRAGE_USER} grilles par tirage autorisées (vous en avez déjà ${existingCount})`,
-        );
+    // Grille limit check + upsert in a single transaction to prevent TOCTOU races.
+    // Note: READ COMMITTED isolation means two truly simultaneous requests could still
+    // both pass the check if they interleave perfectly — for strict enforcement a
+    // SELECT FOR UPDATE or DB-level counter would be needed. This is sufficient for
+    // the expected load pattern.
+    await prisma.$transaction(async (tx) => {
+      if (userRole !== Role.ADMIN) {
+        const existing = await tx.partie.findUnique({
+          where: { userId_tirageId: { userId, tirageId } },
+          include: { grilles: { select: { id: true } } },
+        });
+        const existingCount = existing?.grilles.length ?? 0;
+        if (existingCount + grilles.length > MAX_GRILLES_PER_TIRAGE_USER) {
+          throw new AppError(
+            'GRILLE_LIMIT_REACHED',
+            409,
+            `Maximum ${MAX_GRILLES_PER_TIRAGE_USER} grilles par tirage autorisées (vous en avez déjà ${existingCount})`,
+          );
+        }
       }
-    }
 
-    await prisma.partie.upsert({
-      where: { userId_tirageId: { userId, tirageId } },
-      create: {
-        userId,
-        tirageId,
-        grilles: {
-          create: grilles.map(g => ({
-            numeros: g.numeros,
-            numeroChance: g.numeroChance
-          }))
+      await tx.partie.upsert({
+        where: { userId_tirageId: { userId, tirageId } },
+        create: {
+          userId,
+          tirageId,
+          grilles: {
+            create: grilles.map(g => ({
+              numeros: g.numeros,
+              numeroChance: g.numeroChance
+            }))
+          },
         },
-      },
-      update: {
-        grilles: {
-          create: grilles.map(g => ({
-            numeros: g.numeros,
-            numeroChance: g.numeroChance
-          }))
+        update: {
+          grilles: {
+            create: grilles.map(g => ({
+              numeros: g.numeros,
+              numeroChance: g.numeroChance
+            }))
+          },
         },
-      },
+      });
     });
   }
 

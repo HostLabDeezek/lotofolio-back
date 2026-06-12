@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('../../lib/prisma.js', () => ({
-  prisma: {
+vi.mock('../../lib/prisma.js', () => {
+  const mockPrisma: any = {
     tirage: { findUnique: vi.fn() },
     partie: {
       upsert: vi.fn(),
@@ -9,8 +9,11 @@ vi.mock('../../lib/prisma.js', () => ({
       findFirst: vi.fn(),
       findUnique: vi.fn(),
     },
-  },
-}));
+  };
+  // $transaction passes the same mock client as tx so all tx.* calls use the same vi.fn()s.
+  mockPrisma.$transaction = vi.fn().mockImplementation((fn: (tx: any) => Promise<unknown>) => fn(mockPrisma));
+  return { prisma: mockPrisma };
+});
 
 import { PartieService } from '../../services/partie.service.js';
 import { prisma } from '../../lib/prisma.js';

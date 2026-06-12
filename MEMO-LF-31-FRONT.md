@@ -60,9 +60,10 @@ Le back renvoie **trois formes de body d'erreur différentes**. Ton mapping doit
 | 400 | `INVALID_GRILLE` | Une grille casse les règles du jeu **ou** deux grilles strictement identiques dans la même soumission | « Une de vos grilles est invalide (ou deux grilles sont identiques). » |
 | 404 | `TIRAGE_NOT_FOUND` | Le `tirageId` n'existe plus en base | « Le tirage n'est plus disponible, rechargez la page. » |
 | 409 | `CUTOFF_PASSED` | Tirage plus `PENDING` **ou** à moins de 6 min de l'heure du tirage | « La saisie est fermée pour ce tirage. » |
+| 409 | `GRILLE_LIMIT_REACHED` | Le total cumulé de grilles pour ce tirage dépasserait **10** (grilles existantes + nouvelles) | « Vous avez atteint la limite de 10 grilles pour ce tirage. » |
 | 500 | *(aucun, lire `error`)* | Bug serveur | « Une erreur est survenue, réessayez plus tard. » |
 
-> ⚠️ Pas de `NO_CURRENT_TIRAGE` ni de `TOO_MANY_GRILLES` sur ce POST. Le back **ne plafonne pas** le nombre de grilles (le cap à 5 est une règle purement front, par composition).
+> ℹ️ **Plafond back : 10 grilles par tirage (rôle USER).** Ce plafond est cumulatif entre toutes les soumissions. Il n'existe pas de code `NO_CURRENT_TIRAGE` sur ce POST.
 
 En cas d'erreur : **ne pas réinitialiser la page** (l'utilisateur garde ses grilles pour corriger), afficher le message en haut de page.
 
@@ -132,7 +133,7 @@ Le back fait un **upsert idempotent sur `(userId, tirageId)`** :
 - Soumissions suivantes pour le **même** tirage → **ajoute** les nouvelles grilles à la `Partie` existante.
 
 Conséquences pour le front :
-- C'est ce qui permet d'enregistrer **plus de 5 grilles au total** : on soumet par lots de ≤ 5, la page se réinitialise, on recommence.
+- Le total cumulé de grilles est plafonné à **10 par tirage** (rôle USER). Le back renvoie `409 GRILLE_LIMIT_REACHED` si une soumission ferait dépasser ce cap. Exemple : si l'utilisateur a déjà 8 grilles et soumet un lot de 3, la requête est rejetée.
 - ⚠️ **La déduplication n'a lieu qu'à l'intérieur d'une soumission**, pas entre deux soumissions. Si l'utilisateur resoumet une grille déjà envoyée dans un lot précédent, elle sera **stockée en double**. Le back ne s'en plaint pas. Si tu veux l'éviter, c'est au front de le gérer (non demandé par le ticket).
 
 ---
