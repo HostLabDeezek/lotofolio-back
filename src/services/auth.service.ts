@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { env } from '../config/env.js';
-import { Role } from '../../generated/prisma/enums.js';
+import { Role } from '../generated/prisma/enums.js';
 
 export class AuthService {
 
