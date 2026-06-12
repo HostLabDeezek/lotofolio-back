@@ -8,6 +8,7 @@
     "start": "prisma migrate deploy && node ./dist/src/server.js",
     "dev": "tsx watch src/server.ts",
     "seed": "tsx prisma/seed.ts",
+    "seed:admin": "tsx scripts/seed-admin.ts",
     "postinstall": "prisma generate",
     "generate": "plop",
     "test": "vitest run",

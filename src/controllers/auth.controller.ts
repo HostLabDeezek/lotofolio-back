@@ -32,7 +32,7 @@ class AuthController {
       res.status(201).json({ message: 'Utilisateur créé avec succès', user, token });
     } catch (error: any) {
       if (error.message === 'EMAIL_TAKEN') {
-        return res.status(400).json({ error: 'Cet email est déjà utilisé' });
+        return res.status(400).json({ code: 'EMAIL_TAKEN', message: 'Cet email est déjà utilisé' });
       }
       next(error); // délègue au middleware global
     }
