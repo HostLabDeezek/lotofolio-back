@@ -12,8 +12,8 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client.ts';
-import { Role } from '../generated/prisma/enums.ts';
+import { PrismaClient } from '../src/generated/prisma/client.ts';
+import { Role } from '../src/generated/prisma/enums.ts';
 import bcrypt from 'bcrypt';
 
 const ADMIN_EMAIL = 'admin@lotofolio.fr';
