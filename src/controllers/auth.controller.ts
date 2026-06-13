@@ -7,11 +7,18 @@ const RegisterSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Mot de passe trop court (8 caractères minimum)'),
   username: z.string().min(2, "Nom d'utilisateur trop court").max(30, "Nom d'utilisateur trop long"),
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
 });
 
 const LoginSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(1, 'Mot de passe requis'),
+});
+
+const UpdatePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
+  newPassword: z.string().min(8, 'Nouveau mot de passe trop court (8 caractères minimum)'),
 });
 
 class AuthController {
@@ -25,10 +32,10 @@ class AuthController {
       });
     }
 
-    const { email, password, username } = result.data;
+    const { email, password, username, firstName, lastName } = result.data;
 
     try {
-      const { user, token } = await authService.createUser(email, password, username);
+      const { user, token } = await authService.createUser(email, password, username, firstName, lastName);
       res.status(201).json({ message: 'Utilisateur créé avec succès', user, token });
     } catch (error: any) {
       if (error.message === 'EMAIL_TAKEN') {
@@ -65,6 +72,31 @@ class AuthController {
       const user = await authService.getUserById(req.userId!);
       res.json(user);
     } catch (error: any) {
+      if (error.message === 'USER_NOT_FOUND') {
+        return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      }
+      next(error);
+    }
+  }
+
+  async updatePassword(req: Request, res: Response, next: NextFunction) {
+    const result = UpdatePasswordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Données invalides',
+        details: result.error.issues.map(i => ({ field: String(i.path[0]), message: i.message })),
+      });
+    }
+
+    const { currentPassword, newPassword } = result.data;
+
+    try {
+      await authService.updatePassword(req.userId!, currentPassword, newPassword);
+      res.json({ message: 'Mot de passe mis à jour avec succès' });
+    } catch (error: any) {
+      if (error.message === 'INVALID_CURRENT_PASSWORD') {
+        return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+      }
       if (error.message === 'USER_NOT_FOUND') {
         return res.status(404).json({ error: 'Utilisateur non trouvé' });
       }

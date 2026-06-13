@@ -17,7 +17,9 @@ import { Role } from '../generated/prisma/enums.ts';
 import bcrypt from 'bcrypt';
 
 const ADMIN_EMAIL = 'admin@lotofolio.fr';
-const ADMIN_USERNAME = 'Admin';
+const ADMIN_USERNAME = 'Admin Lotofolio';
+const ADMIN_FIRST_NAME = 'Admin';
+const ADMIN_LAST_NAME = 'Lotofolio';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -37,6 +39,8 @@ async function main() {
       data: {
         email: ADMIN_EMAIL,
         username: ADMIN_USERNAME,
+        firstName: ADMIN_FIRST_NAME,
+        lastName: ADMIN_LAST_NAME,
         password: hashed,
         role: Role.ADMIN,
       },

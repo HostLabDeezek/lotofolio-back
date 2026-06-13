@@ -23,6 +23,8 @@ async function main() {
     const user = await prisma.user.create({
         data: {
             username: 'Maxime Dupuis',
+            firstName: 'Maxime',
+            lastName: 'Dupuis',
             email: 'user@lotofolio.fr',
             password: hashedPassword,
         },
