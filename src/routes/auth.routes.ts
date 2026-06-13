@@ -8,5 +8,6 @@ const router = Router();
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.get('/me', authMiddleware, authController.getMe);
+router.put('/me/password', authMiddleware, authController.updatePassword);
 
 export default router;

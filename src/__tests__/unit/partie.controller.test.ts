@@ -28,13 +28,13 @@ describe('PartieController.jouer', () => {
   });
 
   it('repond 201 sans body quand la partie est jouee', async () => {
-    const req: any = { userId: 1, body: { tirageId: 1, grilles: [validGrille] } };
+    const req: any = { userId: 1, userRole: 'USER', body: { tirageId: 1, grilles: [validGrille] } };
     const res = makeRes();
     const next = vi.fn();
 
     await partieController.jouer(req, res, next);
 
-    expect(partieService.jouer).toHaveBeenCalledWith(1, 1, [validGrille]);
+    expect(partieService.jouer).toHaveBeenCalledWith(1, 1, [validGrille], 'USER');
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).not.toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
@@ -50,7 +50,7 @@ describe('PartieController.getHistory', () => {
 
   it('repond 200 avec le tableau retourne par le service', async () => {
     const fakeHistory = [
-      { partieId: 1, tirageId: 10, dateTirage: '2026-05-31T18:30:00.000Z', jeu: { id: 2, nom: 'Loto' } },
+      { partieId: 1, tirageId: 10, dateTirage: '2026-05-31T18:30:00.000Z', jeu: { id: 2, nom: 'Loto' }, status: 'DONE' as const },
     ];
     vi.mocked(partieService.getHistory).mockResolvedValue(fakeHistory);
 
@@ -93,6 +93,7 @@ describe('PartieController.getPartieDetail', () => {
       tirage: {
         id: 10,
         dateTirage: '2026-05-31T18:30:00.000Z',
+        status: 'DONE' as const,
         numerosTires: [7, 14],
         numeroChanceTire: [3],
         jeu: { id: 2, nom: 'Loto' },

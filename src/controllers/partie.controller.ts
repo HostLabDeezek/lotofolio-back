@@ -15,7 +15,7 @@ class PartieController {
       }
 
       const { tirageId, grilles } = result.data;
-      await partieService.jouer(req.userId!, tirageId, grilles);
+      await partieService.jouer(req.userId!, tirageId, grilles, req.userRole!);
       res.status(201).send();
     } catch (error) {
       next(error);
